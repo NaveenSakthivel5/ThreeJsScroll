@@ -1,0 +1,1030 @@
+import React, { useEffect, useRef } from 'react';
+
+const ThreeJsVideoScroll = () => {
+  const videoRef = useRef(null);
+  const lastFrameTime = useRef(0);  // Track the time of the last frame
+  const targetVideoTime = useRef(0);  // Target video time for easing
+  const currentVideoTime = useRef(0);  // Current video time for easing
+
+  useEffect(() => {
+    // Wait for the video to load metadata to get correct video dimensions
+    videoRef.current.addEventListener('loadedmetadata', () => {
+      const video = videoRef.current;
+
+      const fps = 30;  // Target frames per second
+      const fpsInterval = 1000 / fps;
+
+      const easeInOutQuad = (t) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+
+      const updateVideoFrame = (now) => {
+        if (now - lastFrameTime.current >= fpsInterval) {
+          lastFrameTime.current = now;
+
+          const scrollPosition = window.scrollY;
+          const scrollHeight = document.body.scrollHeight - window.innerHeight;
+          const videoDuration = video.duration;
+
+          targetVideoTime.current = (scrollPosition / scrollHeight) * videoDuration;
+
+          // Apply faster easing to the video time transition
+          const delta = targetVideoTime.current - currentVideoTime.current;
+          currentVideoTime.current += delta * easeInOutQuad(0.4);  // Adjusted to 0.4 for faster easing
+          video.currentTime = currentVideoTime.current;
+        }
+        requestAnimationFrame(updateVideoFrame);
+      };
+
+      // Start the animation loop for scroll
+      requestAnimationFrame(updateVideoFrame);
+    });
+
+    // Clean up event listeners on unmount
+    return () => {
+      window.removeEventListener('scroll', () => {});
+    };
+  }, []);
+
+  return (
+    
+    
+    <video id="background-video" ref={videoRef}  muted playsInline style={{ width: '100%', height: 'auto' }}>
+      <source src="./gear.mp4" type="video/mp4" />
+    </video>
+     
+  );
+};
+
+export default ThreeJsVideoScroll;
+
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+
+sticky 
+import React, { useEffect, useRef, useState } from 'react';
+
+const ThreeJsVideoScroll = () => {
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const lastFrameTime = useRef(0);  // Track the time of the last frame
+  const targetVideoTime = useRef(0);  // Target video time for easing
+  const currentVideoTime = useRef(0);  // Current video time for easing
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const containerTop = containerRef.current.getBoundingClientRect().top;
+
+      if (containerTop <= 0 && !isSticky) {
+        setIsSticky(true);
+      } else if (containerTop > 0 && isSticky) {
+        setIsSticky(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    videoRef.current.addEventListener('loadedmetadata', () => {
+      const video = videoRef.current;
+
+      const fps = 30;  // Target frames per second
+      const fpsInterval = 1000 / fps;
+
+      const easeInOutQuad = (t) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+
+      const updateVideoFrame = (now) => {
+        if (now - lastFrameTime.current >= fpsInterval) {
+          lastFrameTime.current = now;
+
+          const scrollPosition = window.scrollY;
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;  // Total scrollable height
+          const videoDuration = video.duration;
+
+          // Map the entire scroll height to the video duration
+          targetVideoTime.current = (scrollPosition / scrollHeight) * videoDuration;
+
+          // Apply easing to the video time transition
+          const delta = targetVideoTime.current - currentVideoTime.current;
+          currentVideoTime.current += delta * easeInOutQuad(0.4);
+          video.currentTime = currentVideoTime.current;
+        }
+        requestAnimationFrame(updateVideoFrame);
+      };
+
+      // Start the animation loop for scroll
+      requestAnimationFrame(updateVideoFrame);
+    });
+
+    // Clean up event listeners on unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isSticky]);
+
+  return (
+    <div ref={containerRef} style={{ height: 'auto', position: 'relative' }}>
+      <video
+        id="background-video"
+        ref={videoRef}
+        muted
+        playsInline
+        style={{
+          width: isSticky ? '300px' : '100%',
+          height: 'auto',
+          position: isSticky ? 'fixed' : 'relative',
+          top: isSticky ? '50%' : 'auto',
+          left: isSticky ? '0' : 'auto',
+          transform: isSticky ? 'translateY(-50%)' : 'none',
+          transition: 'all 0.5s ease-in-out',
+          zIndex: isSticky ? 1000 : 'auto',
+        }}
+      >
+        <source src="./gear.mp4" type="video/mp4" />
+      </video>
+    </div>
+  );
+};
+
+export default ThreeJsVideoScroll;
+----------------------------------------------------------------------------------------------------
+
+new one 
+import React, { useEffect, useRef } from 'react';
+
+const ThreeJsVideoScroll = () => {
+  const videoRef = useRef(null);
+  const lastFrameTime = useRef(0);  // Track the time of the last frame
+  const targetVideoTime = useRef(0);  // Target video time for easing
+  const currentVideoTime = useRef(0);  // Current video time for easing
+
+  useEffect(() => {
+    const handleMetadataLoaded = () => {
+      const video = videoRef.current;
+      const fps = 30;  // Target frames per second
+      const fpsInterval = 1000 / fps;
+
+      const easeInOutQuad = (t) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+
+      const updateVideoFrame = (now) => {
+        if (now - lastFrameTime.current >= fpsInterval) {
+          lastFrameTime.current = now;
+
+          const scrollPosition = window.scrollY;
+          const scrollHeight = document.body.scrollHeight - window.innerHeight;
+          const videoDuration = video.duration;
+          const totalDuration = videoDuration * 2;  // Assuming two videos with equal duration
+
+          // Calculate target time based on scroll
+          targetVideoTime.current = (scrollPosition / scrollHeight) * totalDuration;
+
+          // Apply faster easing to the video time transition
+          const delta = targetVideoTime.current - currentVideoTime.current;
+          currentVideoTime.current += delta * easeInOutQuad(0.4);  // Adjusted to 0.4 for faster easing
+
+          if (currentVideoTime.current < videoDuration) {
+            video.currentTime = currentVideoTime.current;
+          } else {
+            video.currentTime = videoDuration;  // Freeze video at the end
+          }
+        }
+        requestAnimationFrame(updateVideoFrame);
+      };
+
+      // Start the animation loop for scroll
+      requestAnimationFrame(updateVideoFrame);
+    };
+
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener('loadedmetadata', handleMetadataLoaded);
+    }
+
+    // Clean up event listeners on unmount
+    return () => {
+      if (video) video.removeEventListener('loadedmetadata', handleMetadataLoaded);
+    };
+  }, []);
+
+  return (
+    <video id="background-video-1" ref={videoRef} muted playsInline style={{ width: '100%', height: 'auto' }}>
+      <source src="/gear.mp4" type="video/mp4" />
+    </video>
+  );
+};
+
+export default ThreeJsVideoScroll;
+
+
+import React, { useEffect, useRef } from 'react';
+
+const ThreeJsVideo2 = () => {
+  const videoRef = useRef(null);
+  const lastFrameTime = useRef(0);  // Track the time of the last frame
+  const targetVideoTime = useRef(0);  // Target video time for easing
+  const currentVideoTime = useRef(0);  // Current video time for easing
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    const onMetadataLoaded = () => {
+      const fps = 30;  // Target frames per second
+      const fpsInterval = 1000 / fps;
+
+      const easeInOutQuad = (t) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+
+      const updateVideoFrame = (now) => {
+        if (now - lastFrameTime.current >= fpsInterval) {
+          lastFrameTime.current = now;
+
+          const scrollPosition = window.scrollY;
+          const scrollHeight = document.body.scrollHeight - window.innerHeight;
+          const videoDuration = video.duration;
+
+          targetVideoTime.current = (scrollPosition / scrollHeight) * videoDuration;
+
+          // Apply faster easing to the video time transition
+          const delta = targetVideoTime.current - currentVideoTime.current;
+          currentVideoTime.current += delta * easeInOutQuad(0.4);  // Adjusted to 0.4 for faster easing
+          video.currentTime = currentVideoTime.current;
+        }
+        requestAnimationFrame(updateVideoFrame);
+      };
+
+      // Start the animation loop for scroll
+      requestAnimationFrame(updateVideoFrame);
+    };
+
+    // Add metadata loaded event listener
+    if (video) {
+      video.addEventListener('loadedmetadata', onMetadataLoaded);
+    }
+
+    // Clean up event listener on unmount
+    return () => {
+      if (video) {
+        video.removeEventListener('loadedmetadata', onMetadataLoaded);
+      }
+    };
+  }, []);
+
+  return (
+    <video
+      id="background-video"
+      ref={videoRef}
+      muted
+      playsInline
+      style={{ width: '100%', height: 'auto' }}
+    >
+      <source src="/gear.mp4" type="video/mp4" />
+    </video>
+  );
+};
+
+export default ThreeJsVideo2;
+
+
+----------------------------------------------------------------------------------------
+
+new one - 5th sept
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+const VideoMesh = ({ videoRef, scrollProgress, isScrolling }) => {
+  const videoTextureRef = useRef();
+
+  useFrame(() => {
+    if (videoRef.current && videoTextureRef.current && videoRef.current.readyState >= 2) {
+      const duration = videoRef.current.duration;
+
+      // Update the currentTime based on scroll progress only if scrolling is happening
+      if (isScrolling && !isNaN(duration) && !isNaN(scrollProgress)) {
+        const targetTime = scrollProgress * duration;
+
+        // Update only if the video time has changed
+        if (Math.abs(videoRef.current.currentTime - targetTime) > 0.01) {
+          videoRef.current.currentTime = targetTime;
+          videoTextureRef.current.needsUpdate = true; // Update only when currentTime changes
+        }
+      }
+    }
+  });
+
+  return (
+    <mesh>
+      {/* Increase the size of the plane to enlarge the video */}
+      <planeGeometry args={[8, 6]} /> {/* Increased size */}
+      <meshBasicMaterial transparent={true} opacity={1}>
+        <videoTexture
+          attach="map"
+          ref={videoTextureRef}
+          args={[videoRef.current]}
+          encoding={THREE.sRGBEncoding}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
+
+const ScrollControlledVideo = () => {
+  const videoRef = useRef(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false); // Tracks if scrolling is happening
+  const scrollTimeoutRef = useRef(null); // Timer to detect when scrolling stops
+
+  const SCROLL_SPEED_MULTIPLIER = 2; // Adjust this multiplier to control scroll speed
+
+  const handleScroll = () => {
+    // Update scroll progress
+    const scrollPosition = window.scrollY;
+    const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+    
+    // Scale the scroll fraction by the multiplier to reduce the number of scrolls needed
+    const scrollFraction = (scrollPosition / documentHeight) * SCROLL_SPEED_MULTIPLIER;
+
+    // Set scroll progress, ensuring it's a valid number between 0 and 1
+    setScrollProgress(Math.min(Math.max(scrollFraction, 0), 1));
+    setIsScrolling(true); // Set scrolling to true while the user is scrolling
+
+    // Clear the existing timeout if it's set
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    // Set a timeout to detect when scrolling stops
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false); // Set scrolling to false when the user stops scrolling
+    }, 200); // Wait 200ms after scroll stops
+  };
+
+  useEffect(() => {
+    // Add event listener for scroll
+    window.addEventListener('scroll', handleScroll);
+
+    // Remove event listener on cleanup
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Ensure video is ready to play when scrolling starts
+    if (videoRef.current && isScrolling) {
+      const video = videoRef.current;
+
+      const onLoadedMetadata = () => {
+        video.play();
+      };
+
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+
+      return () => {
+        video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      };
+    } else if (videoRef.current && !isScrolling) {
+      // Pause the video when scrolling stops
+      videoRef.current.pause();
+    }
+  }, [isScrolling]);
+
+  return (
+    <>
+      {/* Video element hidden from view */}
+      <video
+        ref={videoRef}
+        src="/Gearfinal.webm"
+        style={{ display: 'none' }}
+        loop
+        muted
+        playsInline
+      />
+
+      {/* Canvas rendering the video */}
+      <Canvas style={{ width: '100%', height: '100vh' }}> {/* Full-screen canvas */}
+        <VideoMesh videoRef={videoRef} scrollProgress={scrollProgress} isScrolling={isScrolling} />
+      </Canvas>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <div style={{ height: '200vh' }}>
+      <ScrollControlledVideo />
+    </div>
+  );
+};
+
+export default App;
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+sep 6th
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+// Linear interpolation function for smooth transitions
+const lerp = (start, end, t) => start * (1 - t) + end * t;
+
+const VideoMesh = ({ videoRef, targetTime }) => {
+  const videoTextureRef = useRef();
+  const currentTimeRef = useRef(0); // Track the current video time for smooth interpolation
+
+  useFrame(() => {
+    if (videoRef.current && videoTextureRef.current && videoRef.current.readyState >= 2) {
+      const duration = videoRef.current.duration;
+
+      if (duration > 0 && !isNaN(duration)) {
+        // Smoothly interpolate between the current time and the target time
+        currentTimeRef.current = lerp(currentTimeRef.current, targetTime, 0.2); // Adjust for smoothness
+
+        // Clamp the currentTime within bounds and only update if it changed significantly
+        videoRef.current.currentTime = Math.max(0, Math.min(duration, currentTimeRef.current));
+        videoTextureRef.current.needsUpdate = true; // Ensure texture updates
+      }
+    }
+  });
+
+  return (
+    <mesh>
+      <planeGeometry args={[8, 6]} /> {/* Plane size for video */}
+      <meshBasicMaterial transparent={true} opacity={1}>
+        <videoTexture
+          attach="map"
+          ref={videoTextureRef}
+          args={[videoRef.current]}
+          encoding={THREE.sRGBEncoding}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
+
+const ScrollControlledVideo = () => {
+  const videoRef = useRef(null);
+  const [targetTime, setTargetTime] = useState(0); // Track the target time for the video
+  const scrollPositionRef = useRef(0); // Track the previous scroll position
+
+  const handleScroll = () => {
+    const currentScrollPosition = window.scrollY;
+    const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollFraction = currentScrollPosition / documentHeight; // Get fraction of total scroll
+
+    // Map the scroll fraction to the video duration
+    const duration = videoRef.current?.duration || 0;
+    const newTargetTime = Math.min(Math.max(scrollFraction * duration, 0), duration);
+
+    setTargetTime(newTargetTime); // Set the new target time
+    scrollPositionRef.current = currentScrollPosition; // Update the previous scroll position
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Ensure video is ready to play when scrolling starts
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  }, []);
+
+  return (
+    <>
+      {/* Video element hidden from view */}
+      <video
+        ref={videoRef}
+        src="/Gearfinal.webm"
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+      />
+
+      {/* Canvas rendering the video */}
+      <Canvas style={{ width: '100%', height: '100vh' }}>
+        <VideoMesh videoRef={videoRef} targetTime={targetTime} />
+      </Canvas>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <div style={{ height: '200vh' }}>
+      <ScrollControlledVideo />
+    </div>
+  );
+};
+
+export default App;
+
+
+
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+const VideoMesh = ({ videoRef }) => {
+  const texture = useRef();
+
+  useFrame(() => {
+    if (videoRef.current && texture.current && videoRef.current.readyState >= 2) {
+      texture.current.needsUpdate = true; // Ensure the texture updates
+    }
+  });
+
+  return (
+    <mesh>
+      <planeGeometry args={[14, 8]} /> {/* Video plane dimensions */}
+      <meshBasicMaterial ref={texture} transparent={true} opacity={1}>
+        <videoTexture
+          attach="map"
+          args={[videoRef.current]}
+          encoding={THREE.sRGBEncoding}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
+
+const ScrollControlledVideo = () => {
+  const videoRefDown = useRef(null); // Ref for video played when scrolling down
+  const videoRefUp = useRef(null); // Ref for video played when scrolling up
+  const [sticky, setSticky] = useState(false); // Track if the video is sticky
+  const [scrollDirection, setScrollDirection] = useState("down"); // Track the scroll direction
+  const lastScrollY = useRef(0); // Track last scroll position
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false); // Track when the video is ready
+  const [video1Played, setVideo1Played] = useState(false); // Track if video1 has played
+  const [video2Played, setVideo2Played] = useState(false); // Track if video2 has played
+
+  // Ensure both videos are loaded before playing
+  useEffect(() => {
+    if (videoRefDown.current && videoRefUp.current) {
+      videoRefDown.current.oncanplay = () => setIsVideoLoaded(true);
+      videoRefUp.current.oncanplay = () => setIsVideoLoaded(true);
+    }
+  }, []);
+
+  // Handle scroll to switch between videos based on scroll direction
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+    const direction = currentScrollY > lastScrollY.current ? "down" : "up";
+    lastScrollY.current = currentScrollY;
+    setScrollDirection(direction);
+
+    const videoRect = videoRefDown.current.getBoundingClientRect();
+    const centerOffset = window.innerHeight / 2;
+
+    // Make the video sticky once it's in the center
+    if (videoRect.top <= centerOffset && !sticky) {
+      setSticky(true); // Make the video sticky
+    }
+
+    if (sticky && isVideoLoaded) {
+      if (direction === "down" && !video1Played) {
+        // Play video1 only if it hasn't been played yet or video2 has been played
+        playVideo(videoRefDown);
+        stopVideo(videoRefUp); // Stop video2
+      } else if (direction === "up" && video1Played && !video2Played) {
+        // Play video2 if video1 has played and video2 hasn't finished yet
+        playVideo(videoRefUp);
+        stopVideo(videoRefDown); // Stop video1
+      }
+    }
+  };
+
+  // Function to play the selected video
+  const playVideo = (videoRef) => {
+    if (videoRef.current && videoRef.current.paused) {
+      videoRef.current.play();
+    }
+  };
+
+  // Function to stop the selected video
+  const stopVideo = (videoRef) => {
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0; // Reset the video to the start
+    }
+  };
+
+  // Handle video1 completion
+  const handleVideo1End = () => {
+    setVideo1Played(true); // Mark video1 as played
+  };
+
+  // Handle video2 completion
+  const handleVideo2End = () => {
+    setVideo2Played(true); // Mark video2 as played
+    setVideo1Played(false); // Reset video1 to allow it to play again after video2 finishes
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [sticky, isVideoLoaded, video1Played, video2Played]);
+
+  return (
+    <>
+      {/* First video for scrolling down */}
+      <video
+        ref={videoRefDown}
+        src="/GearRev.webm" // Video played on scrolling down
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo1End} // Trigger when video1 ends
+      />
+
+      {/* Second video for scrolling up */}
+      <video
+        ref={videoRefUp}
+        src="/Gearfinal.webm" // Video played on scrolling up
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo2End} // Trigger when video2 ends
+      />
+
+      {/* Canvas rendering the active video */}
+      <Canvas
+        style={{
+          width: '100%',
+          height: sticky ? '70vh' : 'auto', // Height for the video
+          position: sticky ? 'sticky' : 'relative', // Make it sticky
+          top: sticky ? '50%' : 'auto', // Stick it to the center when active
+          transform: sticky ? 'translateY(-50%)' : 'none', // Center it vertically
+          zIndex: sticky ? 100 : 'auto', // Ensure it's on top when sticky
+        }}
+      >
+        <VideoMesh videoRef={scrollDirection === "down" ? videoRefDown : videoRefUp} />
+      </Canvas>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <div style={{ height: '200vh' }}>
+      <ScrollControlledVideo />
+      <div style={{ height: '100vh', visibility: 'hidden' }}></div>
+    </div>
+  );
+};
+
+export default App;
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+const VideoMesh = ({ videoRef }) => {
+  const texture = useRef();
+
+  useFrame(() => {
+    if (videoRef.current && texture.current && videoRef.current.readyState >= 2) {
+      texture.current.needsUpdate = true; // Ensure the texture updates
+    }
+  });
+
+  return (
+    <mesh>
+      <planeGeometry args={[14, 8]} /> {/* Video plane dimensions */}
+      <meshBasicMaterial ref={texture} transparent={true} opacity={1}>
+        <videoTexture
+          attach="map"
+          args={[videoRef.current]}
+          encoding={THREE.sRGBEncoding}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
+
+const ScrollControlledVideo = () => {
+  const videoRefDown = useRef(null); // Ref for video played when scrolling down
+  const videoRefUp = useRef(null); // Ref for video played when scrolling up
+  const [sticky, setSticky] = useState(false); // Track if the video is sticky
+  const [scrollDirection, setScrollDirection] = useState("down"); // Track the scroll direction
+  const lastScrollY = useRef(0); // Track last scroll position
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false); // Track when the video is ready
+  const [video1Played, setVideo1Played] = useState(false); // Track if video1 has played
+  const [video2Played, setVideo2Played] = useState(false); // Track if video2 has played
+
+  // Ensure both videos are loaded before playing
+  useEffect(() => {
+    if (videoRefDown.current && videoRefUp.current) {
+      videoRefDown.current.oncanplay = () => setIsVideoLoaded(true);
+      videoRefUp.current.oncanplay = () => setIsVideoLoaded(true);
+    }
+  }, []);
+
+  // Handle scroll to switch between videos based on scroll direction
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+    const direction = currentScrollY > lastScrollY.current ? "down" : "up";
+    lastScrollY.current = currentScrollY;
+    setScrollDirection(direction);
+
+    const videoRect = videoRefDown.current.getBoundingClientRect();
+    const centerOffset = window.innerHeight / 2;
+
+    // Make the video sticky once it's in the center
+    if (videoRect.top <= centerOffset && !sticky) {
+      setSticky(true); // Make the video sticky
+    }
+
+    if (sticky && isVideoLoaded) {
+      if (direction === "down" && !video1Played) {
+        // Play video1 only if it hasn't been played yet
+        playVideo(videoRefDown);
+        stopVideo(videoRefUp); // Stop video2
+      } else if (direction === "up" && video1Played && !video2Played) {
+        // Play video2 if video1 has played and video2 hasn't finished yet
+        playVideo(videoRefUp);
+        stopVideo(videoRefDown); // Stop video1
+      }
+    }
+  };
+
+  // Function to play the selected video
+  const playVideo = (videoRef) => {
+    if (videoRef.current && videoRef.current.paused) {
+      videoRef.current.play();
+    }
+  };
+
+  // Function to stop the selected video
+  const stopVideo = (videoRef) => {
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0; // Reset the video to the start
+    }
+  };
+
+  // Handle video1 completion
+  const handleVideo1End = () => {
+    setVideo1Played(true); // Mark video1 as played
+    setVideo2Played(false); // Reset video2 to allow it to play again
+  };
+
+  // Handle video2 completion
+  const handleVideo2End = () => {
+    setVideo2Played(true); // Mark video2 as played
+    setVideo1Played(false); // Reset video1 to allow it to play again
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [sticky, isVideoLoaded, video1Played, video2Played]);
+
+  return (
+    <>
+      {/* First video for scrolling down */}
+      <video
+        ref={videoRefDown}
+        src="/GearRev.webm" // Video played on scrolling down
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo1End} // Trigger when video1 ends
+      />
+
+      {/* Second video for scrolling up */}
+      <video
+        ref={videoRefUp}
+        src="/Gearfinal.webm" // Video played on scrolling up
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo2End} // Trigger when video2 ends
+      />
+
+      {/* Canvas rendering the active video */}
+      <Canvas
+        style={{
+          width: '100%',
+          height: sticky ? '70vh' : 'auto', // Height for the video
+          position: sticky ? 'sticky' : 'relative', // Make it sticky
+          top: sticky ? '50%' : 'auto', // Stick it to the center when active
+          transform: sticky ? 'translateY(-50%)' : 'none', // Center it vertically
+          zIndex: sticky ? 100 : 'auto', // Ensure it's on top when sticky
+        }}
+      >
+        <VideoMesh videoRef={scrollDirection === "down" ? videoRefDown : videoRefUp} />
+      </Canvas>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <div style={{ height: '200vh' }}>
+      <ScrollControlledVideo />
+      <div style={{ height: '100vh', visibility: 'hidden' }}></div>
+    </div>
+  );
+};
+
+export default App;
+
+--------------------------------------------------------------------------------------------------------------
+
+the good one
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+const VideoMesh = ({ videoRef }) => {
+  const texture = useRef();
+
+  useFrame(() => {
+    if (videoRef.current && texture.current && videoRef.current.readyState >= 2) {
+      texture.current.needsUpdate = true; // Ensure the texture updates
+    }
+  });
+
+  return (
+    <mesh>
+      <planeGeometry args={[14, 8]} /> {/* Video plane dimensions */}
+      <meshBasicMaterial ref={texture} transparent={true} opacity={1}>
+        <videoTexture
+          attach="map"
+          args={[videoRef.current]}
+          encoding={THREE.sRGBEncoding}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
+
+const ScrollControlledVideo = () => {
+  const videoRefDown = useRef(null); // Ref for video played when scrolling down
+  const videoRefUp = useRef(null); // Ref for video played when scrolling up
+  const [sticky, setSticky] = useState(false); // Track if the video is sticky
+  const [scrollDirection, setScrollDirection] = useState("down"); // Track the scroll direction
+  const lastScrollY = useRef(0); // Track last scroll position
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false); // Track when the video is ready
+  const [video1Playing, setVideo1Playing] = useState(false); // Track if video1 is playing
+  const [video2Playing, setVideo2Playing] = useState(false); // Track if video2 is playing
+  const [allowVideo1Play, setAllowVideo1Play] = useState(true); // Allow Video 1 to play
+  const [allowVideo2Play, setAllowVideo2Play] = useState(false); // Allow Video 2 to play
+
+  // Ensure both videos are loaded before playing
+  useEffect(() => {
+    if (videoRefDown.current && videoRefUp.current) {
+      videoRefDown.current.oncanplay = () => setIsVideoLoaded(true);
+      videoRefUp.current.oncanplay = () => setIsVideoLoaded(true);
+    }
+  }, []);
+
+  // Handle scroll to switch between videos based on scroll direction
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+    const direction = currentScrollY > lastScrollY.current ? "down" : "up";
+    lastScrollY.current = currentScrollY;
+
+    // Prevent switching while a video is playing
+    if (video1Playing || video2Playing) {
+      return; // Ignore opposite scroll direction while a video is still playing
+    }
+
+    setScrollDirection(direction);
+
+    const videoRect = videoRefDown.current.getBoundingClientRect();
+    const centerOffset = window.innerHeight / 2;
+
+    // Make the video sticky once it's in the center
+    if (videoRect.top <= centerOffset && !sticky) {
+      setSticky(true); // Make the video sticky
+    }
+
+    if (sticky && isVideoLoaded) {
+      if (direction === "down" && allowVideo1Play && !video1Playing) {
+        // Play video1 only if it's allowed to play and not already playing
+        playVideo(videoRefDown, setVideo1Playing);
+      } else if (direction === "up" && allowVideo2Play && !video2Playing) {
+        // Play video2 only if it's allowed to play and not already playing
+        playVideo(videoRefUp, setVideo2Playing);
+      }
+    }
+  };
+
+  // Function to play the selected video and manage state
+  const playVideo = (videoRefToPlay, setPlaying) => {
+    if (videoRefToPlay.current && videoRefToPlay.current.paused) {
+      videoRefToPlay.current.play();
+      setPlaying(true);
+    }
+  };
+
+  // Handle video1 completion
+  const handleVideo1End = () => {
+    setVideo1Playing(false); // Mark video1 as not playing
+    setAllowVideo2Play(true); // Allow Video 2 to play next
+    setAllowVideo1Play(false); // Prevent Video 1 from playing again until Video 2 finishes
+  };
+
+  // Handle video2 completion
+  const handleVideo2End = () => {
+    setVideo2Playing(false); // Mark video2 as not playing
+    setAllowVideo1Play(true); // Allow Video 1 to play next
+    setAllowVideo2Play(false); // Prevent Video 2 from playing again until Video 1 finishes
+  };
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [sticky, isVideoLoaded, video1Playing, video2Playing]);
+
+  return (
+    <>
+      {/* First video for scrolling down */}
+      <video
+        ref={videoRefDown}
+        src="/GearRev.webm" // Video played on scrolling down
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo1End} // Trigger when video1 ends
+      />
+
+      {/* Second video for scrolling up */}
+      <video
+        ref={videoRefUp}
+        src="/Gearfinal.webm" // Video played on scrolling up
+        style={{ display: 'none' }}
+        loop={false}
+        muted
+        playsInline
+        onEnded={handleVideo2End} // Trigger when video2 ends
+      />
+
+      {/* Canvas rendering the active video */}
+      <Canvas
+        style={{
+          width: '100%',
+          height: sticky ? '70vh' : 'auto', // Height for the video
+          position: sticky ? 'sticky' : 'relative', // Make it sticky
+          top: sticky ? '50%' : 'auto', // Stick it to the center when active
+          transform: sticky ? 'translateY(-50%)' : 'none', // Center it vertically
+          zIndex: sticky ? 100 : 'auto', // Ensure it's on top when sticky
+        }}
+      >
+        <VideoMesh videoRef={scrollDirection === "down" ? videoRefDown : videoRefUp} />
+      </Canvas>
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <div style={{ height: '200vh' }}>
+      <ScrollControlledVideo />
+      <div style={{ height: '100vh', visibility: 'hidden' }}></div>
+    </div>
+  );
+};
+
+export default App;
+
+--------------------------------------------------------------------------------------------------------------
